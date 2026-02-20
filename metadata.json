@@ -1,0 +1,9 @@
+{
+  "name": "Yakult Shop Pro & Admin",
+  "description": "Premium Yakult Ordering Platform with Dynamic QRIS and Pro Admin Panel",
+  "requestFramePermissions": [
+    "camera",
+    "microphone",
+    "geolocation"
+  ]
+}
