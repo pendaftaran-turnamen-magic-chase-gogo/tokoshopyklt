@@ -103,6 +103,7 @@ const ShopPage: React.FC<ShopPageProps> = ({ addTransaction, cancelTransaction, 
   const [isUploading, setIsUploading] = useState(false);
   const [timerStr, setTimerStr] = useState("00:00");
   const [isExpired, setIsExpired] = useState(false);
+  const [showTxDetail, setShowTxDetail] = useState(false);
   
   const activeTx = allTransactions.find(t => t.id === currentTxId);
   const filteredCountries = COUNTRY_CODES.filter(c => c.name.toLowerCase().includes(searchCountry.toLowerCase()) || c.code.includes(searchCountry));
@@ -223,7 +224,9 @@ const ShopPage: React.FC<ShopPageProps> = ({ addTransaction, cancelTransaction, 
     setIsSubmitting(true);
     await new Promise(resolve => setTimeout(resolve, 1000));
     const orderItems: OrderItem[] = Object.entries(cart).map(([id, qty]) => { const p = products.find(x => x.id === Number(id))!; return { id: p.id, name: p.name, qty: qty as number, price: p.price }; });
-    const fee = selectedPayment === 'qris' ? 200 : 0;
+    const fee = selectedPayment === 'qris' 
+      ? (settings.feeType === 'percent' ? Math.ceil(cartTotal * (settings.feeValue / 100)) : settings.feeValue) 
+      : 0;
     const newTx: Transaction = { id: `ORD-${Date.now()}`, type: selectedPayment!, customer: { ...customer, ...location }, items: orderItems, total: cartTotal + fee, fee, status: 'pending', timestamp: Date.now() };
     addTransaction(newTx);
     setCurrentTxId(newTx.id);
@@ -487,11 +490,42 @@ const ShopPage: React.FC<ShopPageProps> = ({ addTransaction, cancelTransaction, 
                                       level="M" 
                                     />
                                     <p className="text-[10px] text-slate-400 mt-2 font-mono">Dynamic QRIS: {formatCurrency(activeTx.total)}</p>
+                                    <p className="text-xs text-slate-500 mt-1 font-bold">Total {activeTx.items.reduce((s, i) => s + i.qty, 0)} Item</p>
                                   </div>
                                 ) : (
                                   qrisToShow ? <img src={qrisToShow} alt="QR" className="w-48 h-48 rounded-xl object-contain"/> : <div className="text-xs text-rose-400 font-bold text-center">QRIS Error</div>
                                 )}
                             </div>
+                            
+                            <button onClick={() => setShowTxDetail(!showTxDetail)} className="mb-4 text-xs font-bold text-slate-500 hover:text-rose-500 flex items-center justify-center gap-1 w-full py-2 bg-slate-50 rounded-xl transition-colors">
+                              {showTxDetail ? 'Sembunyikan Detail' : 'Lihat Rincian & Total'} <ChevronDown size={14} className={`transition-transform duration-300 ${showTxDetail ? 'rotate-180' : ''}`}/>
+                            </button>
+
+                            {showTxDetail && (
+                              <div className="bg-slate-50 p-4 rounded-2xl mb-4 text-left w-full border border-slate-100 animate-in slide-in-from-top-2 duration-300">
+                                <div className="space-y-2 mb-3 border-b border-slate-200 pb-3">
+                                  {activeTx.items.map(item => (
+                                    <div key={item.id} className="flex justify-between text-xs">
+                                      <span className="text-slate-600">{item.name} <span className="font-bold">x{item.qty}</span></span>
+                                      <span className="font-bold text-slate-800">{formatCurrency(item.price * item.qty)}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                                <div className="flex justify-between text-xs mb-1">
+                                  <span className="text-slate-500">Subtotal</span>
+                                  <span className="font-bold text-slate-700">{formatCurrency(activeTx.total - activeTx.fee)}</span>
+                                </div>
+                                <div className="flex justify-between text-xs mb-1">
+                                  <span className="text-slate-500">Biaya Layanan</span>
+                                  <span className="font-bold text-slate-700">{formatCurrency(activeTx.fee)}</span>
+                                </div>
+                                <div className="flex justify-between text-sm mt-2 pt-2 border-t border-slate-200">
+                                  <span className="font-bold text-slate-800">Total Bayar</span>
+                                  <span className="font-black text-rose-600">{formatCurrency(activeTx.total)}</span>
+                                </div>
+                              </div>
+                            )}
+
                             <div className="flex items-center justify-center gap-2 text-rose-600 font-black text-xl mb-6 bg-rose-50 py-2 rounded-xl"><Clock size={20} className="animate-pulse"/><span>{timerStr}</span></div>
                             <label className={`w-full py-4 rounded-2xl border-2 border-dashed flex items-center justify-center gap-2 transition-all ${activeTx.proofUrl ? 'bg-emerald-50 border-emerald-200 text-emerald-600' : 'bg-slate-50 border-slate-200 text-slate-500 hover:bg-slate-100 cursor-pointer'}`}><input type="file" className="hidden" accept="image/*" onChange={handleProofUpload} disabled={isExpired || isUploading} />{isUploading ? <Loader2 className="animate-spin text-slate-400" size={24}/> : activeTx.proofUrl ? <><Check size={18}/> Bukti Terkirim</> : <><Camera size={18}/> Upload Bukti</>}</label>
                         </>

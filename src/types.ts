@@ -92,4 +92,6 @@ export interface StoreSettings {
   whatsapp: string;
   qrisImageUrl: string;
   qrisTimerMinutes: number;
+  feeType: 'percent' | 'fixed';
+  feeValue: number;
 }

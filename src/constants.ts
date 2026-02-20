@@ -40,6 +40,11 @@ export const PRODUCTS: Product[] = [
   }
 ];
 
+export const DEFAULT_FEE_SETTINGS = {
+  feeType: 'fixed' as const,
+  feeValue: 250
+};
+
 export const ADMIN_CREDENTIALS = {
   user: "arya1212",
   pass: "ab87bCBG$@y5542hhKLnb"

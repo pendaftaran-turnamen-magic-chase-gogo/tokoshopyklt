@@ -1,6 +1,6 @@
 
 import { Transaction, LossRecord, Product, StoreSettings, StoreContent } from './types';
-import { PRODUCTS } from './constants';
+import { PRODUCTS, DEFAULT_FEE_SETTINGS } from './constants';
 
 const DB_KEY = 'yakult_shop_db';
 
@@ -41,7 +41,8 @@ const DEFAULT_DB: DatabaseSchema = {
     storeName: 'TOKOTOPARYA',
     whatsapp: '628123456789',
     qrisImageUrl: 'https://6981e829011752fb6df26a63.imgix.net/1001323452.jpg?w=367&h=364&ar=367%3A364', 
-    qrisTimerMinutes: 10
+    qrisTimerMinutes: 10,
+    ...DEFAULT_FEE_SETTINGS
   },
   content: DEFAULT_CONTENT
 };

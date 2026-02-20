@@ -3,7 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import ShopPage from './pages/ShopPage';
 import AdminDashboard from './pages/AdminDashboard';
 import { Transaction, LossRecord, Product, StoreSettings, StoreContent, Testimonial } from './types';
-import { PRODUCTS } from './constants';
+import { PRODUCTS, DEFAULT_FEE_SETTINGS } from './constants';
 import { getDB, saveDB } from './storage'; 
 import { useQuery, useMutation } from 'convex/react';
 import { apiMock } from './lib/convex-api-mock';
@@ -37,7 +37,8 @@ const App: React.FC = () => {
         storeName: 'TOKOTOPARYA', 
         whatsapp: '628123456789', 
         qrisImageUrl: '', 
-        qrisTimerMinutes: 10
+        qrisTimerMinutes: 10,
+        ...DEFAULT_FEE_SETTINGS
       },
       content: { testimonials: [], gallery: [], faqs: [], infos: [], shopRating: 5 }
   });
@@ -212,6 +213,7 @@ const App: React.FC = () => {
   };
   
   const clearAllData = () => {
+      // Only clear transactions and history, keep products and settings
       saveAndSync([], [], [], null, null, null);
   };
 
