@@ -50,6 +50,26 @@ Masuk ke tab **Attributes** di dalam collection `chats`, lalu tambahkan kolom-ko
 2. Klik tab **Settings**.
 3. Pastikan **Anonymous Session** dalam keadaan **Enabled**.
 
+## 6. Setup Webhook (Agar Lebih Real-Time / Integrasi Server)
+Sesuai permintaan Anda, tambahkan Webhook ini agar sistem bisa mengirim notifikasi ke server Anda saat ada pesanan baru.
+
+1. Masuk ke menu **Webhooks** (di sidebar kiri paling bawah, atau di dalam settings project).
+2. Klik **Create webhook**.
+3. Isi form sesuai data berikut:
+   - **Name**: `Tokoshop`
+   - **POST URL**: `https://tokoshopyklt-l8zz.vercel.app/callback`
+4. **Events (PENTING)**:
+   - Klik tombol **Add an event**.
+   - Di jendela yang muncul (seperti di screenshot Anda):
+     - Klik ikon **Pensil** ✏️ di baris paling bawah (sebelah kanan kolom input).
+     - Hapus teks yang ada.
+     - Copy & Paste teks ini: `databases.69990b77002ee59b3fbf.collections.chats.documents.create`
+   - Klik **Create**.
+5. **Security (HTTP authentication)**:
+   - **User**: `tokoshop`
+   - **Password**: `Atshal5445`
+6. Klik **Create webhook**.
+
 ---
 
 ## Selesai!

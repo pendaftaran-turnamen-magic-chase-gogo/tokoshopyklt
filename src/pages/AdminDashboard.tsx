@@ -244,39 +244,45 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
   // --- REALTIME LISTENER ---
   useEffect(() => {
+      console.log("Subscribing to Appwrite Realtime...");
       const unsubscribe = client.subscribe(
           `databases.${APPWRITE_CONFIG.db}.collections.${APPWRITE_CONFIG.collectionId}.documents`,
           (response: any) => {
+              console.log("Realtime Event:", response);
               // Check if the event is a document creation
               if (response.events.includes("databases.*.collections.*.documents.*.create")) {
                   const payload = response.payload;
                   
                   // Only process if it's an order
                   if (payload.type === 'order') {
-                      const newTx: Transaction = {
-                          id: payload.$id, // Use Appwrite ID or payload.orderId if available
-                          type: 'qris', // Default or parse from payload
-                          customer: {
-                              name: payload.name,
-                              wa: payload.whatsapp,
-                              address: payload.message, // Message is used as address/note
-                              lat: parseFloat(payload.location.split(',')[0]),
-                              lng: parseFloat(payload.location.split(',')[1])
-                          },
-                          items: JSON.parse(payload.items),
-                          total: payload.total,
-                          fee: 0, // Fee logic might need adjustment based on payload
-                          status: 'pending',
-                          timestamp: new Date(payload.timestamp).getTime()
-                      };
-                      
-                      // Add to local state
-                      addTransaction(newTx);
-                      showToast(`Pesanan Baru dari ${payload.name}!`, 'success');
-                      
-                      // Play notification sound
-                      const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3');
-                      audio.play().catch(e => console.log("Audio play failed", e));
+                      try {
+                          const newTx: Transaction = {
+                              id: payload.$id, 
+                              type: 'qris', 
+                              customer: {
+                                  name: payload.name || 'Anonim',
+                                  wa: payload.whatsapp || '-',
+                                  address: payload.message || '', 
+                                  lat: payload.location ? parseFloat(payload.location.split(',')[0]) : 0,
+                                  lng: payload.location ? parseFloat(payload.location.split(',')[1]) : 0
+                              },
+                              items: payload.items ? JSON.parse(payload.items) : [],
+                              total: payload.total || 0,
+                              fee: 0, 
+                              status: 'pending',
+                              timestamp: payload.timestamp ? new Date(payload.timestamp).getTime() : Date.now()
+                          };
+                          
+                          // Add to local state using the prop
+                          addTransaction(newTx);
+                          showToast(`Pesanan Baru dari ${payload.name}!`, 'success');
+                          
+                          // Play notification sound
+                          const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3');
+                          audio.play().catch(e => console.log("Audio play failed", e));
+                      } catch (err) {
+                          console.error("Error parsing realtime order:", err);
+                      }
                   }
               }
           }
@@ -285,7 +291,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
       return () => {
           unsubscribe();
       };
-  }, []);
+  }, [addTransaction]);
 
   // --- AI FUNCTION ---
   const handleAskAI = async () => {
