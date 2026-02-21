@@ -248,6 +248,7 @@ const App: React.FC = () => {
             saveSettings={saveSettingsFn}
             saveContent={saveContentFn}
             clearData={clearAllData}
+            addTransaction={addTransaction}
           />
         } />
         <Route path="*" element={<Navigate to="/" />} />

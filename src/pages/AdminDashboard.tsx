@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { clearAppwriteOrders } from '../services/appwriteService';
-import { APPWRITE_CONFIG } from '../lib/appwrite';
+import { client, APPWRITE_CONFIG } from '../lib/appwrite';
 import { 
   LayoutDashboard, ShoppingBag, History, TrendingDown, 
   Wallet, Check, X, Eye, 
@@ -34,11 +34,12 @@ interface AdminDashboardProps {
   saveSettings: (settings: StoreSettings) => void;
   saveContent: (content: StoreContent) => void;
   clearData: () => void;
+  addTransaction: (tx: Transaction) => void;
 }
 
 const AdminDashboard: React.FC<AdminDashboardProps> = ({ 
   activeTransactions, historyTransactions, losses, products, settings, content,
-  updateStatus, addLoss, saveProducts, saveSettings, saveContent, clearData
+  updateStatus, addLoss, saveProducts, saveSettings, saveContent, clearData, addTransaction
 }) => {
   const navigate = useNavigate();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -240,6 +241,51 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     setToast({ msg, type });
     setTimeout(() => setToast(null), 3000);
   };
+
+  // --- REALTIME LISTENER ---
+  useEffect(() => {
+      const unsubscribe = client.subscribe(
+          `databases.${APPWRITE_CONFIG.db}.collections.${APPWRITE_CONFIG.collectionId}.documents`,
+          (response: any) => {
+              // Check if the event is a document creation
+              if (response.events.includes("databases.*.collections.*.documents.*.create")) {
+                  const payload = response.payload;
+                  
+                  // Only process if it's an order
+                  if (payload.type === 'order') {
+                      const newTx: Transaction = {
+                          id: payload.$id, // Use Appwrite ID or payload.orderId if available
+                          type: 'qris', // Default or parse from payload
+                          customer: {
+                              name: payload.name,
+                              wa: payload.whatsapp,
+                              address: payload.message, // Message is used as address/note
+                              lat: parseFloat(payload.location.split(',')[0]),
+                              lng: parseFloat(payload.location.split(',')[1])
+                          },
+                          items: JSON.parse(payload.items),
+                          total: payload.total,
+                          fee: 0, // Fee logic might need adjustment based on payload
+                          status: 'pending',
+                          timestamp: new Date(payload.timestamp).getTime()
+                      };
+                      
+                      // Add to local state
+                      addTransaction(newTx);
+                      showToast(`Pesanan Baru dari ${payload.name}!`, 'success');
+                      
+                      // Play notification sound
+                      const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3');
+                      audio.play().catch(e => console.log("Audio play failed", e));
+                  }
+              }
+          }
+      );
+
+      return () => {
+          unsubscribe();
+      };
+  }, []);
 
   // --- AI FUNCTION ---
   const handleAskAI = async () => {
