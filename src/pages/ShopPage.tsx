@@ -244,50 +244,28 @@ const ShopPage: React.FC<ShopPageProps> = ({ addTransaction, cancelTransaction, 
         timestamp: Date.now() 
     };
 
-    // --- APPWRITE SYNC ---
+    // --- APPWRITE SYNC (SINGLE COLLECTION) ---
     try {
-        // 1. Save User Detail (detailU)
         await databases.createDocument(
             APPWRITE_CONFIG.db,
-            APPWRITE_CONFIG.collections.detailU,
+            APPWRITE_CONFIG.collectionId,
             ID.unique(),
             {
+                type: 'order',
                 name: customer.name,
                 whatsapp: customer.wa,
                 location: `${location.lat},${location.lng}`,
+                items: JSON.stringify(orderItems),
+                total: newTx.total,
+                status: 'pending',
+                message: customer.address || '', // Pesan ke penjual
                 timestamp: new Date().toISOString()
             }
         );
-
-        // 2. Save Product Detail (detailP)
-        await databases.createDocument(
-            APPWRITE_CONFIG.db,
-            APPWRITE_CONFIG.collections.detailP,
-            ID.unique(),
-            {
-                orderId: newTx.id,
-                items: JSON.stringify(orderItems),
-                total: newTx.total,
-                status: 'pending'
-            }
-        );
-
-        // 3. Save Message to Chats (chats)
-        if (customer.address && customer.address.trim() !== "") {
-             await databases.createDocument(
-                APPWRITE_CONFIG.db,
-                APPWRITE_CONFIG.collections.chats,
-                ID.unique(),
-                {
-                    message: customer.address, // Using address field as message
-                    sender: customer.name + " (" + customer.wa + ")",
-                    timestamp: Date.now()
-                }
-            );
-        }
     } catch (error) {
         console.error("Appwrite Sync Error:", error);
     }
+    // ---------------------
     // ---------------------
 
     addTransaction(newTx);

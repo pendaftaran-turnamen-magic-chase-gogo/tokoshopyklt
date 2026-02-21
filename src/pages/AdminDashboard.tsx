@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { clearAppwriteCollection } from '../services/appwriteService';
+import { clearAppwriteOrders } from '../services/appwriteService';
 import { APPWRITE_CONFIG } from '../lib/appwrite';
 import { 
   LayoutDashboard, ShoppingBag, History, TrendingDown, 
@@ -224,13 +224,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   };
 
   const handleClearAppwrite = async () => {
-      if(!window.confirm("Yakin ingin menghapus SEMUA data di Appwrite Cloud? (Tidak bisa dikembalikan)")) return;
+      if(!window.confirm("Yakin ingin menghapus RIWAYAT PESANAN di Appwrite Cloud? (Pengaturan & Info Toko tidak akan dihapus)")) return;
       setIsGlobalLoading(true);
       try {
-          await clearAppwriteCollection(APPWRITE_CONFIG.collections.chats);
-          await clearAppwriteCollection(APPWRITE_CONFIG.collections.detailP);
-          await clearAppwriteCollection(APPWRITE_CONFIG.collections.detailU);
-          showToast('Data Appwrite berhasil dibersihkan!', 'success');
+          await clearAppwriteOrders();
+          showToast('Riwayat Pesanan Appwrite berhasil dibersihkan!', 'success');
       } catch (e) {
           showToast('Gagal membersihkan Appwrite.', 'error');
       } finally {

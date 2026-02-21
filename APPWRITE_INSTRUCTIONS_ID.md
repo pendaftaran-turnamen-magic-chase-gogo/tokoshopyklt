@@ -1,126 +1,60 @@
-# PANDUAN LENGKAP SETUP APPWRITE (WAJIB)
+# PANDUAN SETUP APPWRITE (UPDATE TERBARU)
 
-Agar aplikasi berjalan lancar, Anda harus membuat **Database** dan **Collections** di Appwrite Console sesuai dengan kode yang sudah saya buat.
+Sesuai permintaan Anda, sekarang kita hanya menggunakan **SATU Collection** bernama `chats` untuk menyimpan semua data (pesanan, pesan, info toko, dll).
 
-## 1. Konfigurasi Project & Database
-Pastikan Anda berada di project dan database yang benar:
+## 1. Konfigurasi Project
 - **Project ID**: `69912660003e0e220cfe`
 - **Database ID**: `69990b77002ee59b3fbf`
 
-## 2. Instruksi Pembuatan Collection (Satu per Satu)
+## 2. Instruksi Pembuatan Collection `chats`
 
-Anda harus membuat **7 Collection** dengan **Collection ID** yang persis sama dengan yang ada di kode.
+Anda hanya perlu membuat **1 Collection** ini saja. Jika sebelumnya sudah ada, silakan **HAPUS** dulu collection `chats` yang lama, lalu buat baru dengan konfigurasi berikut agar bersih.
 
----
+### Langkah-langkah:
+1. Masuk ke Database `69990b77002ee59b3fbf`.
+2. Klik **Create collection**.
+3. Isi **Name**: `Chats`
+4. Isi **Collection ID**: `chats` (Huruf kecil semua).
+5. Klik **Create**.
 
-### 1. Collection: `chats` (Pesan dari Pembeli)
-*Digunakan untuk menyimpan pesan yang dikirim pembeli saat checkout.*
+### 3. Buat Attributes (Kolom)
+Masuk ke tab **Attributes** di dalam collection `chats`, lalu tambahkan kolom-kolom berikut satu per satu. **Semua kolom di bawah ini WAJIB dibuat**.
 
-1. Klik **Create collection**.
-2. Isi **Name**: `Chats`
-3. Isi **Collection ID**: `chats` (Harus huruf kecil semua, tanpa spasi)
-4. Klik **Create**.
-5. Masuk ke tab **Attributes**, lalu klik **Create attribute**:
-   - **Key**: `message` | **Type**: String | **Size**: 1000 | **Required**: Yes
-   - **Key**: `sender` | **Type**: String | **Size**: 255 | **Required**: Yes
-   - **Key**: `timestamp` | **Type**: Integer | **Required**: No (Opsional)
-6. Masuk ke tab **Settings** -> **Permissions**:
-   - Tambahkan Role: `Any`
-   - Centang: **Create**, **Read**, **Update**, **Delete**.
+| Key (Nama Kolom) | Type | Size | Required | Keterangan |
+| :--- | :--- | :--- | :--- | :--- |
+| `type` | String | 50 | **Yes** | Menandakan jenis data (order, review, setting, dll) |
+| `name` | String | 255 | No | Nama User / Nama Toko |
+| `whatsapp` | String | 50 | No | Nomor WA User / Toko |
+| `message` | String | 5000 | No | Pesan Chat / Alamat / Isi Review / Jawaban FAQ |
+| `location` | String | 255 | No | Koordinat Lokasi User |
+| `items` | String | 5000 | No | JSON Data Barang Pesanan |
+| `total` | Integer | - | No | Total Harga / Timer QRIS |
+| `status` | String | 50 | No | Status Pesanan / Tipe Fee |
+| `rating` | Double | - | No | Rating Bintang / Nilai Fee |
+| `title` | String | 255 | No | Judul Info / Pertanyaan FAQ |
+| `image` | String | 5000 | No | URL Gambar Bukti / Produk / QRIS |
+| `active` | Boolean | - | No | Status Aktif Info Toko |
+| `timestamp` | String | 100 | No | Waktu Kejadian |
 
----
+> **Catatan:** Pilih "Double" atau "Float" untuk kolom `rating`.
 
-### 2. Collection: `detailU` (Data Pembeli)
-*Menyimpan nama, WhatsApp, dan lokasi pembeli.*
+### 4. Atur Permissions (Hak Akses)
+1. Masuk ke tab **Settings**.
+2. Scroll ke bagian **Permissions**.
+3. Klik **Add Role**, pilih `Any`.
+4. Centang semua akses: **Create**, **Read**, **Update**, **Delete**.
+5. Klik **Update**.
 
-1. Buat collection baru.
-2. **Name**: `Detail User` | **Collection ID**: `detailU`
-3. **Attributes**:
-   - `name` (String, 255, Required)
-   - `whatsapp` (String, 50, Required)
-   - `location` (String, 255, Required)
-   - `timestamp` (String, 100, Required)
-4. **Permissions**: Role `Any` -> **Create**, **Read**.
-
----
-
-### 3. Collection: `detailP` (Detail Pesanan)
-*Menyimpan item yang dibeli, total harga, dan status.*
-
-1. Buat collection baru.
-2. **Name**: `Detail Product` | **Collection ID**: `detailP`
-3. **Attributes**:
-   - `orderId` (String, 100, Required)
-   - `items` (String, 5000, Required)
-   - `total` (Integer, Required)
-   - `status` (String, 50, Required)
-4. **Permissions**: Role `Any` -> **Create**, **Read**.
-
----
-
-### 4. Collection: `storeSettings` (Pengaturan Toko)
-*Menyimpan nama toko, nomor WA admin, dan pengaturan fee.*
-
-1. Buat collection baru.
-2. **Name**: `Store Settings` | **Collection ID**: `storeSettings`
-3. **Attributes**:
-   - `storeName` (String, 255)
-   - `whatsapp` (String, 50)
-   - `qrisImageUrl` (String, 5000)
-   - `qrisTimerMinutes` (Integer)
-   - `feeType` (String, 20)
-   - `feeValue` (Integer)
-4. **Permissions**: Role `Any` -> **Read**, **Create**, **Update**.
-
----
-
-### 5. Collection: `testimonials` (Testimoni)
-*Menyimpan ulasan dari pembeli.*
-
-1. Buat collection baru.
-2. **Name**: `Testimonials` | **Collection ID**: `testimonials`
-3. **Attributes**:
-   - `name` (String, 255)
-   - `text` (String, 1000)
-   - `rating` (Float) - *Pilih Double atau Float*
-   - `role` (String, 100)
-   - `img` (String, 5000)
-4. **Permissions**: Role `Any` -> **Read**, **Create**, **Update**, **Delete**.
-
----
-
-### 6. Collection: `faqs` (Tanya Jawab)
-*Menyimpan daftar pertanyaan umum.*
-
-1. Buat collection baru.
-2. **Name**: `FAQs` | **Collection ID**: `faqs`
-3. **Attributes**:
-   - `question` (String, 500)
-   - `answer` (String, 2000)
-4. **Permissions**: Role `Any` -> **Read**, **Create**, **Update**, **Delete**.
-
----
-
-### 7. Collection: `storeInfo` (Info Toko)
-*Menyimpan informasi seperti jam buka, garansi, dll.*
-
-1. Buat collection baru.
-2. **Name**: `Store Info` | **Collection ID**: `storeInfo`
-3. **Attributes**:
-   - `title` (String, 255)
-   - `content` (String, 1000)
-   - `icon` (String, 50)
-   - `isActive` (Boolean)
-4. **Permissions**: Role `Any` -> **Read**, **Create**, **Update**, **Delete**.
-
----
-
-## PENTING: Anonymous Auth
-Agar pembeli bisa mengirim data tanpa harus login/register:
-1. Di Appwrite Console, klik menu **Auth** (sebelah kiri).
+### 5. Aktifkan Anonymous Auth
+1. Klik menu **Auth** di sidebar kiri.
 2. Klik tab **Settings**.
-3. Cari bagian **Anonymous Session**.
-4. Ubah menjadi **Enabled**.
+3. Pastikan **Anonymous Session** dalam keadaan **Enabled**.
 
-## Fitur Admin: Hapus Riwayat
-Saya sudah menambahkan tombol **"RESET CLOUD DATA"** di halaman Admin Dashboard. Tombol ini berfungsi untuk menghapus semua data di collection `chats`, `detailP`, dan `detailU` sekaligus, sehingga Anda bisa membersihkan data sampah dengan mudah.
+---
+
+## Selesai!
+Sekarang satu collection `chats` ini sudah sakti mandraguna.
+- Saat ada pesanan, data akan masuk dengan `type: "order"`.
+- Saat ada pesan chat, data masuk dengan `type: "chat"` (jika nanti diaktifkan lagi).
+- Pengaturan toko, testimoni, dll juga akan tersimpan di sini.
+- Admin bisa mereset semua data ini sekaligus lewat tombol "RESET CLOUD DATA".
