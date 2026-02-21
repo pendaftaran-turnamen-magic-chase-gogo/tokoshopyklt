@@ -1,5 +1,7 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { clearAppwriteCollection } from '../services/appwriteService';
+import { APPWRITE_CONFIG } from '../lib/appwrite';
 import { 
   LayoutDashboard, ShoppingBag, History, TrendingDown, 
   Wallet, Check, X, Eye, 
@@ -219,6 +221,21 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
       if (minutes < 1) return 'Baru saja';
       if (minutes > 60) return `${Math.floor(minutes/60)} jam lalu`;
       return `${minutes} menit lalu`;
+  };
+
+  const handleClearAppwrite = async () => {
+      if(!window.confirm("Yakin ingin menghapus SEMUA data di Appwrite Cloud? (Tidak bisa dikembalikan)")) return;
+      setIsGlobalLoading(true);
+      try {
+          await clearAppwriteCollection(APPWRITE_CONFIG.collections.chats);
+          await clearAppwriteCollection(APPWRITE_CONFIG.collections.detailP);
+          await clearAppwriteCollection(APPWRITE_CONFIG.collections.detailU);
+          showToast('Data Appwrite berhasil dibersihkan!', 'success');
+      } catch (e) {
+          showToast('Gagal membersihkan Appwrite.', 'error');
+      } finally {
+          setIsGlobalLoading(false);
+      }
   };
 
   const showToast = (msg: string, type: 'success' | 'error') => {
@@ -618,6 +635,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
           <button onClick={handleDownloadSource} disabled={isZipping} className="w-full py-3 bg-indigo-600/20 text-indigo-400 border border-indigo-600/30 rounded-2xl font-bold text-xs hover:bg-indigo-600 hover:text-white transition-all flex items-center justify-center gap-2">
             {isZipping ? <Loader2 size={16} className="animate-spin"/> : <><FileCode2 size={16}/> DOWNLOAD CODE</>}
           </button>
+          <button onClick={handleClearAppwrite} disabled={isGlobalLoading} className="w-full py-3 border border-indigo-500/20 text-indigo-500/50 rounded-2xl font-bold text-xs hover:bg-indigo-500 hover:text-white transition-all">RESET CLOUD DATA</button>
           <button onClick={handleClearData} disabled={isGlobalLoading} className="w-full py-3 border border-rose-500/20 text-rose-500/50 rounded-2xl font-bold text-xs hover:bg-rose-500 hover:text-white transition-all">RESET RIWAYAT & TRANSAKSI</button>
           <button onClick={handleLogout} className="w-full py-3 text-slate-500 rounded-2xl font-bold text-xs hover:text-white flex items-center justify-center gap-2"><LogOut size={14}/> LOGOUT</button>
         </div>

@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@google/genai": "latest",
+    "appwrite": "^22.4.0",
     "clsx": "^2.1.1",
     "convex": "^1.32.0",
     "jspdf": "^2.5.1",

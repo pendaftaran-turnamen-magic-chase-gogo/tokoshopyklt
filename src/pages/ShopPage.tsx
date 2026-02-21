@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
+import { ID } from 'appwrite';
+import { databases, APPWRITE_CONFIG } from '../lib/appwrite';
 import { ShoppingCart, Plus, Minus, Send, MapPin, X, Check, Wallet, QrCode, Camera, ShoppingBag, ChevronUp, Loader2, Clock, Trash2, AlertTriangle, RefreshCw, PartyPopper, Ban, Search, ChevronDown, Globe, MessageCircle, Star, ChevronRight, Info, Edit3, Lock, ShieldCheck } from 'lucide-react';
 import { Transaction, PaymentType, Customer, OrderItem, Product, StoreSettings, StoreContent, Testimonial } from '../types';
 import { formatCurrency } from '../utils';
@@ -220,14 +222,74 @@ const ShopPage: React.FC<ShopPageProps> = ({ addTransaction, cancelTransaction, 
   };
 
   const handleCheckout = async () => {
-    if (!customer.name || !waNumber || !customer.address || !location) { alert('Mohon lengkapi data (Nama, WA, Alamat) dan bagikan lokasi!'); return; }
+    if (!customer.name || !waNumber || !location) { alert('Mohon lengkapi data (Nama, WA) dan bagikan lokasi!'); return; }
     setIsSubmitting(true);
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    // Use a default address since the field is replaced by chat
+    const finalAddress = "Lihat di Chat / Lokasi Map"; 
+    
     const orderItems: OrderItem[] = Object.entries(cart).map(([id, qty]) => { const p = products.find(x => x.id === Number(id))!; return { id: p.id, name: p.name, qty: qty as number, price: p.price }; });
     const fee = selectedPayment === 'qris' 
       ? (settings.feeType === 'percent' ? Math.ceil(cartTotal * (settings.feeValue / 100)) : settings.feeValue) 
       : 0;
-    const newTx: Transaction = { id: `ORD-${Date.now()}`, type: selectedPayment!, customer: { ...customer, ...location }, items: orderItems, total: cartTotal + fee, fee, status: 'pending', timestamp: Date.now() };
+    
+    const newTx: Transaction = { 
+        id: `ORD-${Date.now()}`, 
+        type: selectedPayment!, 
+        customer: { ...customer, address: finalAddress, ...location }, 
+        items: orderItems, 
+        total: cartTotal + fee, 
+        fee, 
+        status: 'pending', 
+        timestamp: Date.now() 
+    };
+
+    // --- APPWRITE SYNC ---
+    try {
+        // 1. Save User Detail (detailU)
+        await databases.createDocument(
+            APPWRITE_CONFIG.db,
+            APPWRITE_CONFIG.collections.detailU,
+            ID.unique(),
+            {
+                name: customer.name,
+                whatsapp: customer.wa,
+                location: `${location.lat},${location.lng}`,
+                timestamp: new Date().toISOString()
+            }
+        );
+
+        // 2. Save Product Detail (detailP)
+        await databases.createDocument(
+            APPWRITE_CONFIG.db,
+            APPWRITE_CONFIG.collections.detailP,
+            ID.unique(),
+            {
+                orderId: newTx.id,
+                items: JSON.stringify(orderItems),
+                total: newTx.total,
+                status: 'pending'
+            }
+        );
+
+        // 3. Save Message to Chats (chats)
+        if (customer.address && customer.address.trim() !== "") {
+             await databases.createDocument(
+                APPWRITE_CONFIG.db,
+                APPWRITE_CONFIG.collections.chats,
+                ID.unique(),
+                {
+                    message: customer.address, // Using address field as message
+                    sender: customer.name + " (" + customer.wa + ")",
+                    timestamp: Date.now()
+                }
+            );
+        }
+    } catch (error) {
+        console.error("Appwrite Sync Error:", error);
+    }
+    // ---------------------
+
     addTransaction(newTx);
     setCurrentTxId(newTx.id);
     localStorage.setItem('current_order_id', newTx.id);
@@ -582,7 +644,18 @@ const ShopPage: React.FC<ShopPageProps> = ({ addTransaction, cancelTransaction, 
                   {isCountryPickerOpen && (<div className="absolute top-full left-0 mt-2 w-full sm:w-72 bg-white rounded-2xl shadow-xl border border-slate-100 z-50 overflow-hidden animate-in zoom-in-95 duration-200 origin-top-left max-h-[300px] flex flex-col"><div className="p-3 border-b border-slate-100 sticky top-0 bg-white z-10"><div className="bg-slate-50 rounded-xl flex items-center px-3 py-2 border border-slate-200 focus-within:border-rose-500 transition-colors"><Search size={14} className="text-slate-400 mr-2"/><input autoFocus type="text" placeholder="Cari negara..." className="bg-transparent text-xs font-bold outline-none w-full text-slate-700" value={searchCountry} onChange={(e) => setSearchCountry(e.target.value)}/></div></div><div className="overflow-y-auto flex-1 custom-scrollbar p-1">{filteredCountries.map((c) => (<button key={c.code + c.name} onClick={() => selectCountry(c)} className="w-full text-left flex items-center gap-3 p-2.5 hover:bg-rose-50 rounded-xl transition-colors group"><span className="text-xl">{c.flag}</span><div className="flex-1"><p className="text-xs font-bold text-slate-700 group-hover:text-rose-600">{c.name}</p><p className="text-[10px] text-slate-400 font-medium">{c.code}</p></div>{waCountry.code === c.code && <Check size={14} className="text-rose-500"/>}</button>))}</div></div>)}
                   {isCountryPickerOpen && (<div className="fixed inset-0 z-40 bg-transparent" onClick={() => setIsCountryPickerOpen(false)}></div>)}
               </div>
-              <textarea placeholder="Alamat Lengkap" value={customer.address} onChange={e => setCustomer({...customer, address: e.target.value})} className="w-full bg-slate-50 border-none rounded-2xl p-4 font-medium min-h-[100px] focus:ring-2 focus:ring-rose-500 outline-none transition-all" />
+              
+              {/* MESSAGE TO SELLER */}
+              <div className="space-y-2">
+                  <label className="text-xs font-bold text-slate-400 uppercase ml-1">Pesan ke Penjual (Opsional)</label>
+                  <textarea 
+                    placeholder="Contoh: Tolong bungkus yang rapi ya kak..." 
+                    value={customer.address} // Reusing address field for message as requested "Pengganti Alamat"
+                    onChange={e => setCustomer({...customer, address: e.target.value})} 
+                    className="w-full bg-slate-50 border-none rounded-2xl p-4 font-medium min-h-[100px] focus:ring-2 focus:ring-rose-500 outline-none transition-all" 
+                  />
+              </div>
+
               <button onClick={getGeolocation} disabled={isLocating} className={`w-full py-4 flex items-center justify-center gap-2 rounded-2xl font-bold text-sm transition-all ${location ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-blue-50 text-blue-600 border border-blue-100 hover:bg-blue-100'}`}>
                 {isLocating ? <Loader2 className="animate-spin" size={18}/> : <MapPin size={18}/>} 
                 {isLocating ? 'Mencari Lokasi...' : location ? 'Lokasi Terkunci ✓' : 'Bagikan Lokasi (Wajib)'}
